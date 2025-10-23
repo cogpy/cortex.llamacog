@@ -55,7 +55,8 @@ class EngineI {
     if (f == "HandleChatCompletion" || f == "HandleEmbedding" ||
         f == "LoadModel" || f == "UnloadModel" || f == "GetModelStatus" ||
         f == "GetModels" || f == "SetFileLogger" || f == "SetLogLevel" ||
-        f == "StopInferencing") {
+        f == "StopInferencing" || f == "AddKnowledge" || 
+        f == "QueryKnowledge" || f == "GetAtomSpaceStats") {
       return true;
     }
     return false;
@@ -71,4 +72,20 @@ class EngineI {
   virtual void SetLogLevel(trantor::Logger::LogLevel log_level) = 0;
 
   virtual void StopInferencing(const std::string& model_id) = 0;
+
+  // OpenCog AtomSpace integration APIs
+  // Add knowledge triple to the AtomSpace
+  virtual void AddKnowledge(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+  
+  // Query knowledge from the AtomSpace
+  virtual void QueryKnowledge(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+  
+  // Get AtomSpace statistics
+  virtual void GetAtomSpaceStats(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 };

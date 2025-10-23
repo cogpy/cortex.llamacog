@@ -308,6 +308,9 @@ LlamaEngine::LlamaEngine(int log_option) {
     async_file_logger_ = std::make_unique<trantor::FileLogger>();
   }
 
+  // Initialize OpenCog AtomSpace
+  atomspace_ = std::make_unique<opencog::AtomSpaceWrapper>();
+
   common_log_pause(common_log_main());
 
   llama_log_set(
@@ -1295,6 +1298,100 @@ bool LlamaEngine::HasForceStopInferenceModel(const std::string& id) const {
   std::lock_guard l(fsi_mtx_);
   return force_stop_inference_models_.find(id) !=
          force_stop_inference_models_.end();
+}
+
+// OpenCog AtomSpace Integration Methods
+
+void LlamaEngine::AddKnowledge(
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+  Json::Value status;
+  Json::Value response;
+
+  try {
+    if (!json_body || !json_body->isMember("subject") || 
+        !json_body->isMember("predicate") || !json_body->isMember("object")) {
+      status["status_code"] = k400BadRequest;
+      response["message"] = "Missing required fields: subject, predicate, object";
+      callback(std::move(status), std::move(response));
+      return;
+    }
+
+    std::string subject = (*json_body)["subject"].asString();
+    std::string predicate = (*json_body)["predicate"].asString();
+    std::string object = (*json_body)["object"].asString();
+
+    bool success = atomspace_->AddKnowledge(subject, predicate, object);
+
+    if (success) {
+      status["status_code"] = k200OK;
+      response["message"] = "Knowledge added successfully";
+      response["subject"] = subject;
+      response["predicate"] = predicate;
+      response["object"] = object;
+    } else {
+      status["status_code"] = k500InternalServerError;
+      response["message"] = "Failed to add knowledge";
+    }
+  } catch (const std::exception& e) {
+    LOG_ERROR << "AddKnowledge error: " << e.what();
+    status["status_code"] = k500InternalServerError;
+    response["message"] = std::string("Error: ") + e.what();
+  }
+
+  callback(std::move(status), std::move(response));
+}
+
+void LlamaEngine::QueryKnowledge(
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+  Json::Value status;
+  Json::Value response;
+
+  try {
+    if (!json_body || !json_body->isMember("pattern")) {
+      status["status_code"] = k400BadRequest;
+      response["message"] = "Missing required field: pattern";
+      callback(std::move(status), std::move(response));
+      return;
+    }
+
+    std::string pattern = (*json_body)["pattern"].asString();
+    
+    Json::Value query_result = atomspace_->QueryKnowledge(pattern);
+    
+    status["status_code"] = k200OK;
+    response = query_result;
+  } catch (const std::exception& e) {
+    LOG_ERROR << "QueryKnowledge error: " << e.what();
+    status["status_code"] = k500InternalServerError;
+    response["message"] = std::string("Error: ") + e.what();
+  }
+
+  callback(std::move(status), std::move(response));
+}
+
+void LlamaEngine::GetAtomSpaceStats(
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+  Json::Value status;
+  Json::Value response;
+
+  try {
+    (void)json_body;  // Unused parameter
+    
+    Json::Value stats = atomspace_->GetStatistics();
+    
+    status["status_code"] = k200OK;
+    response = stats;
+    response["message"] = "AtomSpace statistics retrieved successfully";
+  } catch (const std::exception& e) {
+    LOG_ERROR << "GetAtomSpaceStats error: " << e.what();
+    status["status_code"] = k500InternalServerError;
+    response["message"] = std::string("Error: ") + e.what();
+  }
+
+  callback(std::move(status), std::move(response));
 }
 
 extern "C" {
