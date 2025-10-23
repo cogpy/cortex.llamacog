@@ -250,6 +250,76 @@ int main(int argc, char** argv) {
         });
   };
 
+  // OpenCog AtomSpace Endpoints
+  const auto handle_add_knowledge = [&](const httplib::Request& req,
+                                        httplib::Response& resp) {
+    resp.set_header("Access-Control-Allow-Origin",
+                    req.get_header_value("Origin"));
+    auto req_body = std::make_shared<Json::Value>();
+    r.Parse(req.body, *req_body);
+    
+    if (server.engine_->IsSupported("AddKnowledge")) {
+      server.engine_->AddKnowledge(
+          req_body, [&server, &resp](Json::Value status, Json::Value res) {
+            resp.set_content(res.toStyledString().c_str(),
+                             "application/json; charset=utf-8");
+            resp.status = status["status_code"].asInt();
+          });
+    } else {
+      Json::Value error_response;
+      error_response["message"] = "AddKnowledge API not supported by this engine";
+      resp.set_content(error_response.toStyledString().c_str(),
+                       "application/json; charset=utf-8");
+      resp.status = 501; // Not Implemented
+    }
+  };
+
+  const auto handle_query_knowledge = [&](const httplib::Request& req,
+                                          httplib::Response& resp) {
+    resp.set_header("Access-Control-Allow-Origin",
+                    req.get_header_value("Origin"));
+    auto req_body = std::make_shared<Json::Value>();
+    r.Parse(req.body, *req_body);
+    
+    if (server.engine_->IsSupported("QueryKnowledge")) {
+      server.engine_->QueryKnowledge(
+          req_body, [&server, &resp](Json::Value status, Json::Value res) {
+            resp.set_content(res.toStyledString().c_str(),
+                             "application/json; charset=utf-8");
+            resp.status = status["status_code"].asInt();
+          });
+    } else {
+      Json::Value error_response;
+      error_response["message"] = "QueryKnowledge API not supported by this engine";
+      resp.set_content(error_response.toStyledString().c_str(),
+                       "application/json; charset=utf-8");
+      resp.status = 501; // Not Implemented
+    }
+  };
+
+  const auto handle_get_atomspace_stats = [&](const httplib::Request& req,
+                                               httplib::Response& resp) {
+    resp.set_header("Access-Control-Allow-Origin",
+                    req.get_header_value("Origin"));
+    auto req_body = std::make_shared<Json::Value>();
+    r.Parse(req.body, *req_body);
+    
+    if (server.engine_->IsSupported("GetAtomSpaceStats")) {
+      server.engine_->GetAtomSpaceStats(
+          req_body, [&server, &resp](Json::Value status, Json::Value res) {
+            resp.set_content(res.toStyledString().c_str(),
+                             "application/json; charset=utf-8");
+            resp.status = status["status_code"].asInt();
+          });
+    } else {
+      Json::Value error_response;
+      error_response["message"] = "GetAtomSpaceStats API not supported by this engine";
+      resp.set_content(error_response.toStyledString().c_str(),
+                       "application/json; charset=utf-8");
+      resp.status = 501; // Not Implemented
+    }
+  };
+
   svr->Post("/loadmodel", handle_load_model);
   // Use POST since httplib does not read request body for GET method
   svr->Post("/unloadmodel", handle_unload_model);
@@ -257,6 +327,12 @@ int main(int argc, char** argv) {
   svr->Post("/v1/embeddings", handle_embeddings);
   svr->Post("/modelstatus", handle_get_model_status);
   svr->Get("/models", handle_get_running_models);
+  
+  // OpenCog AtomSpace endpoints
+  svr->Post("/addknowledge", handle_add_knowledge);
+  svr->Post("/queryknowledge", handle_query_knowledge);
+  svr->Post("/atomspace/stats", handle_get_atomspace_stats);
+  
   std::atomic<bool> running = true;
   svr->Delete("/destroy",
               [&](const httplib::Request& req, httplib::Response& resp) {
