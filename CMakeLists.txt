@@ -35,6 +35,7 @@ add_library(${TARGET} SHARED
   src/llama_server_context.cc
   src/llama_client_slot.cc
   src/file_logger.cc
+  src/opencog_atomspace.cc
 )
 
 find_library(JSONCPP

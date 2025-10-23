@@ -6,7 +6,7 @@
 </div>
 
 # cortex.llamacpp
-cortex.llamacpp is a high-efficiency C++ inference engine for edge computing.
+cortex.llamacpp is a high-efficiency C++ inference engine for edge computing with OpenCog AtomSpace integration for cognitive reasoning and knowledge representation.
 
 It is a dynamic library that can be loaded by any server at runtime.
 
@@ -16,7 +16,7 @@ It is a dynamic library that can be loaded by any server at runtime.
 ├── base -> Engine interface
 ├── examples -> Server example to integrate engine
 ├── llama.cpp -> Upstream llama C++
-├── src -> Engine implementation
+├── src -> Engine implementation with OpenCog AtomSpace integration
 ├── third-party -> Dependencies of the cortex.llamacpp project
 ```
 
@@ -156,3 +156,60 @@ Table of parameters
 |`cache_type` | String| KV cache type: f16, q8_0, q4_0, default is f16|
 |`use_mmap` | Boolean| To enable mmap, default is true|
 |`ctx_shift` | Boolean| To enable context shift, default is true|
+
+## OpenCog AtomSpace Integration
+
+cortex.llamacpp now includes OpenCog's AtomSpace for cognitive knowledge representation and reasoning capabilities. This enables the inference engine to:
+
+- Store and retrieve semantic knowledge in a hypergraph structure
+- Perform pattern matching on knowledge graphs
+- Build and query relationships between concepts
+- Persist knowledge across inference sessions
+
+### OpenCog API Endpoints
+
+**Add Knowledge Triple**
+```bash
+curl http://localhost:3928/addknowledge \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "subject": "Einstein",
+    "predicate": "developed",
+    "object": "Theory of Relativity"
+  }'
+```
+
+**Query Knowledge**
+```bash
+curl http://localhost:3928/queryknowledge \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "pattern": "Einstein"
+  }'
+```
+
+**Get AtomSpace Statistics**
+```bash
+curl http://localhost:3928/atomspace/stats \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+### Knowledge Graph Features
+
+The integrated AtomSpace provides:
+
+- **Triple Storage**: Store knowledge as subject-predicate-object triples
+- **Concept Management**: Add and query concepts with properties
+- **Pattern Matching**: Find knowledge patterns in the graph
+- **Relationship Discovery**: Discover related concepts automatically
+- **Persistence**: Export and import knowledge graphs to/from JSON files
+- **Statistics**: Monitor AtomSpace usage and atom counts
+
+### Use Cases
+
+1. **Semantic Memory**: Store facts and relationships from LLM conversations
+2. **Context Awareness**: Query related knowledge during inference
+3. **Knowledge Building**: Accumulate domain knowledge over multiple sessions
+4. **Reasoning Support**: Enable logical inference on stored knowledge
+5. **Edge Intelligence**: Maintain local knowledge graphs for offline reasoning

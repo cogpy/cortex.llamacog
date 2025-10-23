@@ -7,6 +7,7 @@
 #include "file_logger.h"
 #include "llama.h"
 #include "llama_server_context.h"
+#include "opencog_atomspace.h"
 #include "trantor/utils/ConcurrentTaskQueue.h"
 #include "trantor/utils/Logger.h"
 
@@ -45,6 +46,17 @@ class LlamaEngine : public EngineI {
   void SetLogLevel(trantor::Logger::LogLevel log_level =
                        trantor::Logger::LogLevel::kInfo) final;
   void StopInferencing(const std::string& model_id) final;
+
+  // OpenCog AtomSpace APIs
+  void AddKnowledge(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final;
+  void QueryKnowledge(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final;
+  void GetAtomSpaceStats(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final;
 
  private:
   bool LoadModelImpl(std::shared_ptr<Json::Value> jsonBody);
@@ -92,6 +104,9 @@ class LlamaEngine : public EngineI {
 
   bool print_version_ = true;
   std::unique_ptr<trantor::FileLogger> async_file_logger_;
+
+  // OpenCog AtomSpace for knowledge representation
+  std::unique_ptr<opencog::AtomSpaceWrapper> atomspace_;
 
 #if defined(_WIN32)
   std::vector<DLL_DIRECTORY_COOKIE> cookies_;
